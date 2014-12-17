@@ -2,7 +2,7 @@
 using System.IO;
 using System.ServiceModel;
 
-namespace Logic
+namespace Server
 {
     [ServiceContract]
     public interface IDeployer

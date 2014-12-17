@@ -8,25 +8,88 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Client.DeployerService {
+namespace Client.Server {
+    using System.Runtime.Serialization;
+    using System;
     
+    
+    [System.Diagnostics.DebuggerStepThroughAttribute()]
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("System.Runtime.Serialization", "4.0.0.0")]
+    [System.Runtime.Serialization.DataContractAttribute(Name="FileDetail", Namespace="http://schemas.datacontract.org/2004/07/Server")]
+    [System.SerializableAttribute()]
+    public partial class FileDetail : object, System.Runtime.Serialization.IExtensibleDataObject, System.ComponentModel.INotifyPropertyChanged {
+        
+        [System.NonSerializedAttribute()]
+        private System.Runtime.Serialization.ExtensionDataObject extensionDataField;
+        
+        [System.Runtime.Serialization.OptionalFieldAttribute()]
+        private byte[] HashField;
+        
+        [System.Runtime.Serialization.OptionalFieldAttribute()]
+        private string PathField;
+        
+        [global::System.ComponentModel.BrowsableAttribute(false)]
+        public System.Runtime.Serialization.ExtensionDataObject ExtensionData {
+            get {
+                return this.extensionDataField;
+            }
+            set {
+                this.extensionDataField = value;
+            }
+        }
+        
+        [System.Runtime.Serialization.DataMemberAttribute()]
+        public byte[] Hash {
+            get {
+                return this.HashField;
+            }
+            set {
+                if ((object.ReferenceEquals(this.HashField, value) != true)) {
+                    this.HashField = value;
+                    this.RaisePropertyChanged("Hash");
+                }
+            }
+        }
+        
+        [System.Runtime.Serialization.DataMemberAttribute()]
+        public string Path {
+            get {
+                return this.PathField;
+            }
+            set {
+                if ((object.ReferenceEquals(this.PathField, value) != true)) {
+                    this.PathField = value;
+                    this.RaisePropertyChanged("Path");
+                }
+            }
+        }
+        
+        public event System.ComponentModel.PropertyChangedEventHandler PropertyChanged;
+        
+        protected void RaisePropertyChanged(string propertyName) {
+            System.ComponentModel.PropertyChangedEventHandler propertyChanged = this.PropertyChanged;
+            if ((propertyChanged != null)) {
+                propertyChanged(this, new System.ComponentModel.PropertyChangedEventArgs(propertyName));
+            }
+        }
+    }
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
-    [System.ServiceModel.ServiceContractAttribute(ConfigurationName="DeployerService.IDeployer")]
+    [System.ServiceModel.ServiceContractAttribute(ConfigurationName="Server.IDeployer")]
     public interface IDeployer {
         
         // CODEGEN: Generating message contract since the operation SendFile is neither RPC nor document wrapped.
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IDeployer/SendFile", ReplyAction="http://tempuri.org/IDeployer/SendFileResponse")]
-        Client.DeployerService.SendFileResponse SendFile(Client.DeployerService.RemoteFile request);
+        Client.Server.SendFileResponse SendFile(Client.Server.RemoteFile request);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IDeployer/SendFile", ReplyAction="http://tempuri.org/IDeployer/SendFileResponse")]
-        System.Threading.Tasks.Task<Client.DeployerService.SendFileResponse> SendFileAsync(Client.DeployerService.RemoteFile request);
+        System.Threading.Tasks.Task<Client.Server.SendFileResponse> SendFileAsync(Client.Server.RemoteFile request);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IDeployer/GetAllFiles", ReplyAction="http://tempuri.org/IDeployer/GetAllFilesResponse")]
-        Logic.FileDetail[] GetAllFiles(string path);
+        Client.Server.FileDetail[] GetAllFiles(string path);
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IDeployer/GetAllFiles", ReplyAction="http://tempuri.org/IDeployer/GetAllFilesResponse")]
-        System.Threading.Tasks.Task<Logic.FileDetail[]> GetAllFilesAsync(string path);
+        System.Threading.Tasks.Task<Client.Server.FileDetail[]> GetAllFilesAsync(string path);
     }
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]
@@ -61,12 +124,12 @@ namespace Client.DeployerService {
     }
     
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
-    public interface IDeployerChannel : Client.DeployerService.IDeployer, System.ServiceModel.IClientChannel {
+    public interface IDeployerChannel : Client.Server.IDeployer, System.ServiceModel.IClientChannel {
     }
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]
     [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
-    public partial class DeployerClient : System.ServiceModel.ClientBase<Client.DeployerService.IDeployer>, Client.DeployerService.IDeployer {
+    public partial class DeployerClient : System.ServiceModel.ClientBase<Client.Server.IDeployer>, Client.Server.IDeployer {
         
         public DeployerClient() {
         }
@@ -88,34 +151,34 @@ namespace Client.DeployerService {
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        Client.DeployerService.SendFileResponse Client.DeployerService.IDeployer.SendFile(Client.DeployerService.RemoteFile request) {
+        Client.Server.SendFileResponse Client.Server.IDeployer.SendFile(Client.Server.RemoteFile request) {
             return base.Channel.SendFile(request);
         }
         
         public void SendFile(string FullPath, System.IO.Stream Stream) {
-            Client.DeployerService.RemoteFile inValue = new Client.DeployerService.RemoteFile();
+            Client.Server.RemoteFile inValue = new Client.Server.RemoteFile();
             inValue.FullPath = FullPath;
             inValue.Stream = Stream;
-            Client.DeployerService.SendFileResponse retVal = ((Client.DeployerService.IDeployer)(this)).SendFile(inValue);
+            Client.Server.SendFileResponse retVal = ((Client.Server.IDeployer)(this)).SendFile(inValue);
         }
         
         [System.ComponentModel.EditorBrowsableAttribute(System.ComponentModel.EditorBrowsableState.Advanced)]
-        System.Threading.Tasks.Task<Client.DeployerService.SendFileResponse> Client.DeployerService.IDeployer.SendFileAsync(Client.DeployerService.RemoteFile request) {
+        System.Threading.Tasks.Task<Client.Server.SendFileResponse> Client.Server.IDeployer.SendFileAsync(Client.Server.RemoteFile request) {
             return base.Channel.SendFileAsync(request);
         }
         
-        public System.Threading.Tasks.Task<Client.DeployerService.SendFileResponse> SendFileAsync(string FullPath, System.IO.Stream Stream) {
-            Client.DeployerService.RemoteFile inValue = new Client.DeployerService.RemoteFile();
+        public System.Threading.Tasks.Task<Client.Server.SendFileResponse> SendFileAsync(string FullPath, System.IO.Stream Stream) {
+            Client.Server.RemoteFile inValue = new Client.Server.RemoteFile();
             inValue.FullPath = FullPath;
             inValue.Stream = Stream;
-            return ((Client.DeployerService.IDeployer)(this)).SendFileAsync(inValue);
+            return ((Client.Server.IDeployer)(this)).SendFileAsync(inValue);
         }
         
-        public Logic.FileDetail[] GetAllFiles(string path) {
+        public Client.Server.FileDetail[] GetAllFiles(string path) {
             return base.Channel.GetAllFiles(path);
         }
         
-        public System.Threading.Tasks.Task<Logic.FileDetail[]> GetAllFilesAsync(string path) {
+        public System.Threading.Tasks.Task<Client.Server.FileDetail[]> GetAllFilesAsync(string path) {
             return base.Channel.GetAllFilesAsync(path);
         }
     }

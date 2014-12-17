@@ -1,171 +1,218 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using System.Windows.Forms;
-using Client.DeployerService;
-using Logic;
 using Newtonsoft.Json;
+using Client.Server;
+using Logic;
 
 namespace Client
 {
     public partial class Form1 : Form
     {
-        private Config Config;
-
-        public Form1()
-        {
-            InitializeComponent();
-        }
-
         private void log(string text, params string[] args)
         {
             txtConsole.Text += String.Format(text, args) + Environment.NewLine;
             txtConsole.SelectionStart = txtConsole.TextLength;
             txtConsole.ScrollToCaret();
         }
-
-        private void Form1_Load(object sender, EventArgs e)
+        private Config config = new Config();
+        public Form1()
         {
-            if (!File.Exists("config.json"))
-            {
-                var sampleConfig = new Config
-                {
-                    Exclusions = new List<string> { "web.config" },
-                    Deployments = new List<Deployment>
-                    {
-                        new Deployment
-                        {
-                            Name = "Sample App 1",
-                            Path = @"C:\Deployments\SampleApp1\",
-                            Server = "127.0.0.1"
-                        }
-                    }
-                };
+            InitializeComponent();
+        }
 
-                File.WriteAllText("config.json", JsonConvert.SerializeObject(sampleConfig));
-                MessageBox.Show("You must define your configuration in config.json", "No configuration found",
-                    MessageBoxButtons.OK, MessageBoxIcon.Error);
-                Application.Exit();
-            }
+        public Form1(string filePath)
+        {
+            InitializeComponent();
+            openConfigurationFile(filePath);
+        }
+
+        private void exitToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Application.Exit();
+        }
+
+        private void openToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            openFileDialog1.ShowDialog();
+        }
+
+        private void saveToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (String.IsNullOrEmpty(saveFileDialog1.FileName))
+                saveFileDialog1.ShowDialog();
             else
-            {
-                Config = JsonConvert.DeserializeObject<Config>(File.ReadAllText("config.json"));
+                save();
+        }
 
-                chkDeployTo.DataSource = Config.Deployments.OrderBy(d => d.Name).ToList();
-                chkDeployTo.DisplayMember = "Name";
+        private void save()
+        {
+            cleanDataGrid();
+
+            File.WriteAllText(saveFileDialog1.FileName, JsonConvert.SerializeObject(config));
+        }
+
+        private void cleanDataGrid()
+        {
+            var toDelete = config.RemoteDeployments.Where(rd => rd.FriendlyName == null)
+                            .Select(rd => config.RemoteDeployments.IndexOf(rd)).ToList();
+
+            if (toDelete != null)
+            {
+                foreach (var index in toDelete)
+                {
+                    config.RemoteDeployments.RemoveAt(index);
+                }
             }
+        }
+
+        private void openConfigurationFile(string path)
+        {
+            config = JsonConvert.DeserializeObject<Config>(File.ReadAllText(path));
+            txtLocalDeployment.Text = config.LocalDeployment;
+            saveFileDialog1.FileName = openFileDialog1.FileName;
+            dataGridView1.DataSource = config.RemoteDeployments;
+        }
+
+        private void openFileDialog1_FileOk(object sender, CancelEventArgs e)
+        {
+            openConfigurationFile(openFileDialog1.FileName);
+        }
+
+        private void saveFileDialog1_FileOk(object sender, CancelEventArgs e)
+        {
+            save();
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
-            fbLocalDeploy.ShowDialog();
-            txtLocalDeploy.Text = fbLocalDeploy.SelectedPath;
+            folderBrowserDialog1.ShowDialog();
+            txtLocalDeployment.Text = folderBrowserDialog1.SelectedPath;
         }
 
-        private void btnDeploy_Click(object sender, EventArgs e)
+        private void Form1_Load(object sender, EventArgs e)
         {
-            DialogResult result =
-                MessageBox.Show("Are you really sure that you want to deploy your application to the selected servers?",
-                    "Are you sure?", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
-
-            if (result == DialogResult.Yes)
-            {
-                txtConsole.Text = String.Empty;
-                progressBar1.Value = 0;
-                deploy();
-            }
+            dataGridView1.DataSource = config.RemoteDeployments;
         }
 
         private async void deploy()
         {
+            txtConsole.Text = String.Empty;
+            progressBar1.Value = 0;
             btnDeploy.Enabled = false;
-            try
-            {
-                IEnumerable<FileDetail> localFileDetails =
-                    Directory.GetFiles(txtLocalDeploy.Text, "*", SearchOption.AllDirectories).Select(f => new FileDetail
+            cleanDataGrid();
+            IEnumerable<FileDetail> localFileDetails =
+                    Directory.GetFiles(txtLocalDeployment.Text, "*", SearchOption.AllDirectories).Select(f => new FileDetail
                     {
                         Path = f,
                         Hash = f.MD5Hash(),
                     });
-                progressBar1.Maximum = localFileDetails.Count() * chkDeployTo.CheckedItems.Count;
-                foreach (object selectedItem in chkDeployTo.CheckedItems)
+            progressBar1.Maximum = localFileDetails.Count() * config.RemoteDeployments.Count;
+
+            foreach (var deployment in config.RemoteDeployments)
+            {
+                log("Starting Deployment: {0}", deployment.FriendlyName);
+
+                var dc = new DeployerClient("NetTcpBinding_IDeployer",
+                    "net.tcp://" + deployment.Host + ":6969/Deployer");
+                log("Connected to server: {0}", deployment.Host);
+
+                //IEnumerable<string> exclusionList;
+                //if (deployment.Exclusions != null)
+                //    exclusionList = Config.Exclusions.Concat(deployment.Exclusions);
+                //else
+                //    exclusionList = Config.Exclusions;
+
+                FileDetail[] remoteFileDetails = await dc.GetAllFilesAsync(deployment.Path);
+                foreach (FileDetail localFileDetail in localFileDetails)
                 {
-                    var deployment = (Deployment)selectedItem;
-                    log("Starting Deployment: {0}", deployment.Name);
+                    progressBar1.Value++;
 
-                    var dc = new DeployerClient("NetTcpBinding_IDeployer",
-                        "net.tcp://" + deployment.Server + ":6969/Deployer");
-                    log("Connected to server: {0}", deployment.Server);
+                    /*var toExclude = exclusionList.Any(
+                        el => localFileDetail.Path.Contains(el, StringComparison.InvariantCultureIgnoreCase));*/
 
-                    IEnumerable<string> exclusionList;
-                    if (deployment.Exclusions != null)
-                        exclusionList = Config.Exclusions.Concat(deployment.Exclusions);
-                    else
-                        exclusionList = Config.Exclusions;
+                    var toExclude = false;
 
-                    FileDetail[] remoteFileDetails = await dc.GetAllFilesAsync(deployment.Path);
-                    foreach (FileDetail localFileDetail in localFileDetails)
+                    string relativeLocalPath =
+                        localFileDetail.Path.Remove(localFileDetail.Path.IndexOf(txtLocalDeployment.Text),
+                            txtLocalDeployment.Text.Length).TrimStart('\\');
+                    if (!toExclude)
                     {
-                        progressBar1.Value++;
+                        FileDetail remoteFile =
+                            remoteFileDetails.SingleOrDefault(
+                                rf =>
+                                    rf.Path.Remove(rf.Path.IndexOf(deployment.Path), deployment.Path.Length)
+                                        .TrimStart('\\')
+                                        .Equals(relativeLocalPath, StringComparison.InvariantCultureIgnoreCase));
 
-                        var toExclude = exclusionList.Any(
-                            el => localFileDetail.Path.Contains(el, StringComparison.InvariantCultureIgnoreCase));
+                        bool upload = false;
 
-
-                        string relativeLocalPath =
-                            localFileDetail.Path.Remove(localFileDetail.Path.IndexOf(txtLocalDeploy.Text),
-                                txtLocalDeploy.Text.Length).TrimStart('\\');
-                        if (!toExclude)
+                        if (remoteFile != null)
                         {
-                            FileDetail remoteFile =
-                                remoteFileDetails.SingleOrDefault(
-                                    rf =>
-                                        rf.Path.Remove(rf.Path.IndexOf(deployment.Path), deployment.Path.Length)
-                                            .TrimStart('\\')
-                                            .Equals(relativeLocalPath, StringComparison.InvariantCultureIgnoreCase));
+                            bool isDifferent = !localFileDetail.Hash.IsEqualTo(remoteFile.Hash);
 
-                            bool upload = false;
-
-                            if (remoteFile != null)
+                            if (isDifferent)
                             {
-                                bool isDifferent = !localFileDetail.Hash.IsEqualTo(remoteFile.Hash);
-
-                                if (isDifferent)
-                                {
-                                    log("{0} is different. Uploading...", relativeLocalPath);
-                                    upload = true;
-                                }
-                            }
-                            else
-                            {
-                                log("{0} does not exist at the destination server. Uploading...", relativeLocalPath);
+                                log("{0} is different. Uploading...", relativeLocalPath);
                                 upload = true;
-                            }
-
-                            if (upload)
-                            {
-                                using (FileStream stream = File.OpenRead(localFileDetail.Path))
-                                {
-                                    await
-                                        dc.SendFileAsync(deployment.Path + "\\" + relativeLocalPath, stream);
-                                }
                             }
                         }
                         else
                         {
-                            log("{0} excluded", relativeLocalPath);
+                            log("{0} does not exist at the destination server. Uploading...", relativeLocalPath);
+                            upload = true;
+                        }
+
+                        if (upload)
+                        {
+                            using (FileStream stream = File.OpenRead(localFileDetail.Path))
+                            {
+                                await
+                                    dc.SendFileAsync(deployment.Path + "\\" + relativeLocalPath, stream);
+                            }
                         }
                     }
-
-                    log("Finished Deployment on: {0}{1}", deployment.Name, Environment.NewLine);
+                    else
+                    {
+                        log("{0} excluded", relativeLocalPath);
+                    }
                 }
+
+                log("Finished Deployment on: {0}{1}", deployment.FriendlyName, Environment.NewLine);
             }
-            catch (Exception e)
-            {
-                throw;
-            }
+
             btnDeploy.Enabled = true;
         }
+
+        private void txtLocalDeployment_TextChanged(object sender, EventArgs e)
+        {
+            config.LocalDeployment = txtLocalDeployment.Text;
+            try
+            {
+                folderBrowserDialog1.SelectedPath = config.LocalDeployment;
+            }
+            catch
+            {
+                
+            }
+        }
+
+        private void toolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            saveFileDialog1.ShowDialog();
+        }
+
+        private void btnDeploy_Click(object sender, EventArgs e)
+        {
+            deploy();
+        }
+
     }
 }

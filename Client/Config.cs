@@ -1,22 +1,23 @@
-﻿using System;
+﻿
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.ComponentModel;
 
 namespace Client
 {
+    public class RemoteDeployment
+    {
+        public string FriendlyName { get; set; }
+        public string Host { get; set; }
+        public string Path { get; set; }
+    }
     public class Config
     {
-        public List<Deployment> Deployments { get; set; }
-        public List<string> Exclusions { get; set; } 
-    }
+        public string LocalDeployment { get; set; }
+        public BindingList<RemoteDeployment> RemoteDeployments { get; set; }
 
-    public class Deployment
-    {
-        public string Name { get; set; }
-        public string Server { get; set; }
-        public string Path { get; set; }
-        public List<string> Exclusions { get; set; }
+        public Config()
+        {
+            RemoteDeployments = new BindingList<RemoteDeployment>();
+        }
     }
 }

@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.ServiceModel;
+using Logic;
 
-namespace Logic
+namespace Server
 {
     [MessageContract]
     public class RemoteFile : IDisposable
