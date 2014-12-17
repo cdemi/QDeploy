@@ -30,6 +30,6 @@ To install the Windows Service:
 **This application doesn't have any form of authentication or encryption**. You should run this server behind a firewall so it can be accessible only from your LAN. **NEVER EVER EVER** make the server accessible to the public internet. For remote deployments, do not open this application to the internet, but rather connect with a VPN; this way you will have the added security of encryption and authentication that VPN setups inherently offer.
 
 ## Issues
-This application is still in it's very early stages. It is very likely that you will encounter some bugs or would like some new features. Unfortunately I don't have as much time as I would like to keep developing this application but if there are any features you need or any bugs you find, do not hesitate to [submit an Issue on GitHub](issues) and I will see if I can implement/fix them. 
+This application is still in it's very early stages. It is very likely that you will encounter some bugs or would like some new features. Unfortunately I don't have as much time as I would like to keep developing this application but if there are any features you need or any bugs you find, do not hesitate to [submit an Issue on GitHub](../../issues) and I will see if I can implement/fix them. 
 
-On the other hand, if you are a developer and would like to contribute you can fork and submit a [pull request](pulls) and implement the issues you need.
+On the other hand, if you are a developer and would like to contribute you can fork and submit a [pull request](../../pulls) and implement the issues you need.
