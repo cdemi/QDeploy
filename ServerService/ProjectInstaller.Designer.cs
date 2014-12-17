@@ -39,7 +39,8 @@
             // 
             // serviceInstaller1
             // 
-            this.serviceInstaller1.Description = "QDeploy Server for Remote Deploying of Applications";
+            this.serviceInstaller1.Description = "QDeploy Server for Remote Deploying of Applications. https://github.com/cdemi/QDe" +
+    "ploy";
             this.serviceInstaller1.DisplayName = "QDeploy Server";
             this.serviceInstaller1.ServiceName = "QDeploy Server";
             this.serviceInstaller1.StartType = System.ServiceProcess.ServiceStartMode.Automatic;
