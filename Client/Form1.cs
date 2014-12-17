@@ -1,29 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.ServiceModel;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using Newtonsoft.Json;
 using Client.Server;
 using Logic;
+using Newtonsoft.Json;
 
 namespace Client
 {
     public partial class Form1 : Form
     {
-        private void log(string text, params string[] args)
-        {
-            txtConsole.Text += String.Format("[" + DateTime.Now.ToString("HH:mm:ss")+"] " + text, args) + Environment.NewLine;
-            txtConsole.SelectionStart = txtConsole.TextLength;
-            txtConsole.ScrollToCaret();
-        }
         private Config config = new Config();
+
         public Form1()
         {
             InitializeComponent();
@@ -33,6 +24,14 @@ namespace Client
         {
             InitializeComponent();
             openConfigurationFile(filePath);
+        }
+
+        private void log(string text, params string[] args)
+        {
+            txtConsole.Text += String.Format("[" + DateTime.Now.ToString("HH:mm:ss") + "] " + text, args) +
+                               Environment.NewLine;
+            txtConsole.SelectionStart = txtConsole.TextLength;
+            txtConsole.ScrollToCaret();
         }
 
         private void exitToolStripMenuItem_Click(object sender, EventArgs e)
@@ -62,12 +61,12 @@ namespace Client
 
         private void cleanDataGrid()
         {
-            var toDelete = config.RemoteDeployments.Where(rd => rd.FriendlyName == null)
-                            .Select(rd => config.RemoteDeployments.IndexOf(rd)).ToList();
+            List<int> toDelete = config.RemoteDeployments.Where(rd => rd.FriendlyName == null)
+                .Select(rd => config.RemoteDeployments.IndexOf(rd)).ToList();
 
             if (toDelete != null)
             {
-                foreach (var index in toDelete)
+                foreach (int index in toDelete)
                 {
                     config.RemoteDeployments.RemoveAt(index);
                 }
@@ -110,14 +109,14 @@ namespace Client
             btnDeploy.Enabled = false;
             cleanDataGrid();
             IEnumerable<FileDetail> localFileDetails =
-                    Directory.GetFiles(txtLocalDeployment.Text, "*", SearchOption.AllDirectories).Select(f => new FileDetail
-                    {
-                        Path = f,
-                        Hash = f.MD5Hash(),
-                    });
-            progressBar1.Maximum = localFileDetails.Count() * config.RemoteDeployments.Count;
+                Directory.GetFiles(txtLocalDeployment.Text, "*", SearchOption.AllDirectories).Select(f => new FileDetail
+                {
+                    Path = f,
+                    Hash = f.MD5Hash(),
+                });
+            progressBar1.Maximum = localFileDetails.Count()*config.RemoteDeployments.Count;
 
-            foreach (var deployment in config.RemoteDeployments)
+            foreach (RemoteDeployment deployment in config.RemoteDeployments)
             {
                 log("Deploying to {0}", deployment.FriendlyName);
 
@@ -141,7 +140,7 @@ namespace Client
                         /*var toExclude = exclusionList.Any(
                         el => localFileDetail.Path.Contains(el, StringComparison.InvariantCultureIgnoreCase));*/
 
-                        var toExclude = false;
+                        bool toExclude = false;
 
                         string relativeLocalPath =
                             localFileDetail.Path.Remove(localFileDetail.Path.IndexOf(txtLocalDeployment.Text),
@@ -193,7 +192,6 @@ namespace Client
                 {
                     log("Couldn't connect to: {0}... Skipping Deployment{1}", deployment.Host, Environment.NewLine);
                 }
-
             }
 
             btnDeploy.Enabled = true;
@@ -208,7 +206,6 @@ namespace Client
             }
             catch
             {
-                
             }
         }
 
@@ -221,6 +218,5 @@ namespace Client
         {
             deploy();
         }
-
     }
 }

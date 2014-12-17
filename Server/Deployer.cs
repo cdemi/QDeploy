@@ -10,11 +10,9 @@ namespace Server
     [MessageContract]
     public class RemoteFile : IDisposable
     {
-        [MessageHeader(MustUnderstand = true)]
-        public string FullPath;
+        [MessageHeader(MustUnderstand = true)] public string FullPath;
 
-        [MessageBodyMember(Order = 1)]
-        public System.IO.Stream Stream;
+        [MessageBodyMember(Order = 1)] public Stream Stream;
 
         public void Dispose()
         {
@@ -25,6 +23,7 @@ namespace Server
             }
         }
     }
+
     public class Deployer : IDeployer
     {
         public IEnumerable<FileDetail> GetAllFiles(string path)
@@ -38,10 +37,10 @@ namespace Server
 
         public void SendFile(RemoteFile remoteFile)
         {
-            FileInfo path = new FileInfo(remoteFile.FullPath);
+            var path = new FileInfo(remoteFile.FullPath);
             if (!Directory.Exists(path.Directory.FullName))
                 Directory.CreateDirectory(path.Directory.FullName);
-            using (var fileStream = File.Create(remoteFile.FullPath))
+            using (FileStream fileStream = File.Create(remoteFile.FullPath))
             {
                 remoteFile.Stream.CopyTo(fileStream);
             }

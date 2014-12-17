@@ -1,6 +1,4 @@
-﻿
-using System.Collections.Generic;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 
 namespace Client
 {
@@ -10,14 +8,15 @@ namespace Client
         public string Host { get; set; }
         public string Path { get; set; }
     }
+
     public class Config
     {
-        public string LocalDeployment { get; set; }
-        public BindingList<RemoteDeployment> RemoteDeployments { get; set; }
-
         public Config()
         {
             RemoteDeployments = new BindingList<RemoteDeployment>();
         }
+
+        public string LocalDeployment { get; set; }
+        public BindingList<RemoteDeployment> RemoteDeployments { get; set; }
     }
 }
