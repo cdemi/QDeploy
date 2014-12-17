@@ -27,7 +27,15 @@ To install the Windows Service:
 > **Pro Tip:** If you need to uninstall the service, you can uninstall it by using the following command: `InstallUtil /u QDeploy Server.exe`
 
 ## Security
-**This application doesn't have any form of authentication or encryption**. You should run this server behind a firewall so it can be accessible only from your LAN. **NEVER EVER EVER** make the server accessible to the public internet. For remote deployments, do not open this application to the internet, but rather connect with a VPN; this way you will have the added security of encryption and authentication that VPN setups inherently offer.
+**This application doesn't have any form of authentication or encryption**. You should run this server behind a firewall so it can be accessible only from your LAN. **NEVER EVER EVER** make the server accessible to the public internet. For remote deployments, do not open this application to the internet, but rather connect with a VPN; this way you will have the added security of encryption and authentication that VPN setups inherently offer. 
+
+> **TL;DR:** YOU NEED TO IMPLEMENT YOUR OWN AUTHENTICATION AND ENCRYPTION
+
+## About File Comparison
+File comparison is done by comparing the MD5 Hash of all the files in your local deployment with the MD5 hashes of all the files on the destination deployment. If the hash doesn't match it means that the file has changed and is then uploaded to the destination server. 
+
+## Stability
+Please test this application on your staging environment before using on your production systems. I have not tested this extensively so take caution.
 
 ## Issues
 This application is still in it's very early stages. It is very likely that you will encounter some bugs or would like some new features. Unfortunately I don't have as much time as I would like to keep developing this application but if there are any features you need or any bugs you find, do not hesitate to [submit an Issue on GitHub](../../issues) and I will see if I can implement/fix them. 
