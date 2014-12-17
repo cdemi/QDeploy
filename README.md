@@ -9,7 +9,7 @@ You may download and build the Windows Client yourself, or else you may [downloa
 
 The client allows you to save and open profiles, so if you have some common setups that you use it would be easier if you save them.
 
-**Pro Tip:** If you right click one of your saved files, you can select it to always open with the QDeploy Client executable. This way you only have to double click the QDeploy Profile (`*.qdj`) to open your deployment window.
+> **Pro Tip:** If you right click one of your saved files, you can select it to always open with the QDeploy Client executable. This way you only have to double click the QDeploy Profile (`*.qdj`) to open your deployment window.
 
 ##Server
 The server is a WCF Windows Service. To install this service on your server, compile this solution from source. 
@@ -24,12 +24,12 @@ To install the Windows Service:
 4. Run: `services.msc`
 5. Find the QDeploy Server and start it (it will restart automatically after reboot)
 
-**Pro Tip:** If you need to uninstall the service, you can uninstall it by using the following command: `InstallUtil /u QDeploy Server.exe`
+> **Pro Tip:** If you need to uninstall the service, you can uninstall it by using the following command: `InstallUtil /u QDeploy Server.exe`
 
 ## Security
 **This application doesn't have any form of authentication or encryption**. You should run this server behind a firewall so it can be accessible only from your LAN. **NEVER EVER EVER** make the server accessible to the public internet. For remote deployments, do not open this application to the internet, but rather connect with a VPN; this way you will have the added security of encryption and authentication that VPN setups inherently offer.
 
 ## Issues
-This application is still in it's very early stages. It would be no surprise if you find some bugs or missing features. Unfortunately I don't have as much time as I would like to keep developing this application but if there are any features you need or any bugs you find, do not hesitate to [submit an Issue on GitHub](issues). 
+This application is still in it's very early stages. It is very likely that you will encounter some bugs or would like some new features. Unfortunately I don't have as much time as I would like to keep developing this application but if there are any features you need or any bugs you find, do not hesitate to [submit an Issue on GitHub](issues) and I will see if I can implement/fix them. 
 
 On the other hand, if you are a developer and would like to contribute you can fork and submit a [pull request](pulls) and implement the issues you need.
