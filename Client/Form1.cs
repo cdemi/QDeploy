@@ -5,6 +5,7 @@ using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.ServiceModel;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -18,7 +19,7 @@ namespace Client
     {
         private void log(string text, params string[] args)
         {
-            txtConsole.Text += String.Format(text, args) + Environment.NewLine;
+            txtConsole.Text += String.Format("[" + DateTime.Now.ToString("HH:mm:ss")+"] " + text, args) + Environment.NewLine;
             txtConsole.SelectionStart = txtConsole.TextLength;
             txtConsole.ScrollToCaret();
         }
@@ -118,11 +119,11 @@ namespace Client
 
             foreach (var deployment in config.RemoteDeployments)
             {
-                log("Starting Deployment: {0}", deployment.FriendlyName);
+                log("Deploying to {0}", deployment.FriendlyName);
 
                 var dc = new DeployerClient("NetTcpBinding_IDeployer",
                     "net.tcp://" + deployment.Host + ":6969/Deployer");
-                log("Connected to server: {0}", deployment.Host);
+                log("Connecting to server: {0}", deployment.Host);
 
                 //IEnumerable<string> exclusionList;
                 //if (deployment.Exclusions != null)
@@ -130,62 +131,69 @@ namespace Client
                 //else
                 //    exclusionList = Config.Exclusions;
 
-                FileDetail[] remoteFileDetails = await dc.GetAllFilesAsync(deployment.Path);
-                foreach (FileDetail localFileDetail in localFileDetails)
+                try
                 {
-                    progressBar1.Value++;
+                    FileDetail[] remoteFileDetails = await dc.GetAllFilesAsync(deployment.Path);
+                    foreach (FileDetail localFileDetail in localFileDetails)
+                    {
+                        progressBar1.Value++;
 
-                    /*var toExclude = exclusionList.Any(
+                        /*var toExclude = exclusionList.Any(
                         el => localFileDetail.Path.Contains(el, StringComparison.InvariantCultureIgnoreCase));*/
 
-                    var toExclude = false;
+                        var toExclude = false;
 
-                    string relativeLocalPath =
-                        localFileDetail.Path.Remove(localFileDetail.Path.IndexOf(txtLocalDeployment.Text),
-                            txtLocalDeployment.Text.Length).TrimStart('\\');
-                    if (!toExclude)
-                    {
-                        FileDetail remoteFile =
-                            remoteFileDetails.SingleOrDefault(
-                                rf =>
-                                    rf.Path.Remove(rf.Path.IndexOf(deployment.Path), deployment.Path.Length)
-                                        .TrimStart('\\')
-                                        .Equals(relativeLocalPath, StringComparison.InvariantCultureIgnoreCase));
-
-                        bool upload = false;
-
-                        if (remoteFile != null)
+                        string relativeLocalPath =
+                            localFileDetail.Path.Remove(localFileDetail.Path.IndexOf(txtLocalDeployment.Text),
+                                txtLocalDeployment.Text.Length).TrimStart('\\');
+                        if (!toExclude)
                         {
-                            bool isDifferent = !localFileDetail.Hash.IsEqualTo(remoteFile.Hash);
+                            FileDetail remoteFile =
+                                remoteFileDetails.SingleOrDefault(
+                                    rf =>
+                                        rf.Path.Remove(rf.Path.IndexOf(deployment.Path), deployment.Path.Length)
+                                            .TrimStart('\\')
+                                            .Equals(relativeLocalPath, StringComparison.InvariantCultureIgnoreCase));
 
-                            if (isDifferent)
+                            bool upload = false;
+
+                            if (remoteFile != null)
                             {
-                                log("{0} is different. Uploading...", relativeLocalPath);
+                                bool isDifferent = !localFileDetail.Hash.IsEqualTo(remoteFile.Hash);
+
+                                if (isDifferent)
+                                {
+                                    log("{0} is different. Uploading...", relativeLocalPath);
+                                    upload = true;
+                                }
+                            }
+                            else
+                            {
+                                log("{0} does not exist at the destination server. Uploading...", relativeLocalPath);
                                 upload = true;
+                            }
+
+                            if (upload)
+                            {
+                                using (FileStream stream = File.OpenRead(localFileDetail.Path))
+                                {
+                                    await
+                                        dc.SendFileAsync(deployment.Path + "\\" + relativeLocalPath, stream);
+                                }
                             }
                         }
                         else
                         {
-                            log("{0} does not exist at the destination server. Uploading...", relativeLocalPath);
-                            upload = true;
-                        }
-
-                        if (upload)
-                        {
-                            using (FileStream stream = File.OpenRead(localFileDetail.Path))
-                            {
-                                await
-                                    dc.SendFileAsync(deployment.Path + "\\" + relativeLocalPath, stream);
-                            }
+                            log("{0} excluded", relativeLocalPath);
                         }
                     }
-                    else
-                    {
-                        log("{0} excluded", relativeLocalPath);
-                    }
+                    log("Finished Deployment{0}", Environment.NewLine);
+                }
+                catch (EndpointNotFoundException enfe)
+                {
+                    log("Couldn't connect to: {0}... Skipping Deployment{1}", deployment.Host, Environment.NewLine);
                 }
 
-                log("Finished Deployment on: {0}{1}", deployment.FriendlyName, Environment.NewLine);
             }
 
             btnDeploy.Enabled = true;
