@@ -189,7 +189,7 @@ namespace Client
                     }
                     log("Finished Deployment{0}", Environment.NewLine);
                 }
-                catch (EndpointNotFoundException)
+                catch (EndpointNotFoundException enfe)
                 {
                     log("Couldn't connect to: {0}... Skipping Deployment{1}", deployment.Host, Environment.NewLine);
                 }
