@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<configuration>
+    <startup> 
+        <supportedRuntime version="v4.0" sku=".NETFramework,Version=v4.5.1" />
+    </startup>
+    <system.serviceModel>
+        <bindings>
+            <netTcpBinding>
+                <binding name="NetTcpBinding_IDeployer" transferMode="Streamed">
+                    <security mode="None" />
+                </binding>
+            </netTcpBinding>
+        </bindings>
+        <client>
+            <endpoint address="net.tcp://localhost:6969/Deployer" binding="netTcpBinding"
+                bindingConfiguration="NetTcpBinding_IDeployer" contract="Server.IDeployer"
+                name="NetTcpBinding_IDeployer">
+                <identity>
+                    <dns value="localhost" />
+                </identity>
+            </endpoint>
+        </client>
+    </system.serviceModel>
+</configuration>
