@@ -4,7 +4,7 @@ QDeploy (Quick and Dirty Deployment tool) is an application that helps you deplo
 
 QDeploy is intelligent enough to compare the destination files with the local files and find out what differences there are and only update the different or missing files. **The source always wins**; this means that your local copy is assumed to be always correct. If there are any extra files at the destination they won't be removed.
 
-![Screenshot](https://cloud.githubusercontent.com/assets/8025435/5476534/3c014ba6-8623-11e4-8735-b32fe0ad0a07.PNG)
+![Screenshot](https://cloud.githubusercontent.com/assets/8025435/5494448/c2e8cdfc-86f4-11e4-90b3-add831a536a3.PNG)
 
 ##Client
 You can clone this repository and build the Windows Client yourself, or else you may [download the pre-compiled executable](https://github.com/cdemi/QDeploy/blob/master/Client/Installer/QDeploy Client.zip?raw=true). 
