@@ -77,7 +77,7 @@ namespace Client
         {
             config = JsonConvert.DeserializeObject<Config>(File.ReadAllText(path));
             txtLocalDeployment.Text = config.LocalDeployment;
-            saveFileDialog1.FileName = openFileDialog1.FileName;
+            saveFileDialog1.FileName = path;
             dataGridView1.DataSource = config.RemoteDeployments;
         }
 
