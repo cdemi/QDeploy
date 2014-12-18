@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
 
 namespace Logic
@@ -31,6 +32,11 @@ namespace Logic
         public static bool Contains(this string source, string toCheck, StringComparison comp)
         {
             return source.IndexOf(toCheck, comp) >= 0;
+        }
+
+        public static string Remove(this string source, string text, StringComparison comparer = StringComparison.InvariantCultureIgnoreCase)
+        {
+            return source.Remove(source.IndexOf(text, comparer), text.Length);
         }
     }
 }

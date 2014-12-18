@@ -26,7 +26,7 @@ namespace Client
             openConfigurationFile(filePath);
         }
 
-        private void log(string text, params string[] args)
+        private void log(string text, params object[] args)
         {
             txtConsole.Text += String.Format("[" + DateTime.Now.ToString("HH:mm:ss") + "] " + text, args) +
                                Environment.NewLine;
@@ -79,6 +79,7 @@ namespace Client
             txtLocalDeployment.Text = config.LocalDeployment;
             saveFileDialog1.FileName = path;
             dataGridView1.DataSource = config.RemoteDeployments;
+            loadExclusionList();
         }
 
         private void openFileDialog1_FileOk(object sender, CancelEventArgs e)
@@ -124,11 +125,9 @@ namespace Client
                     "net.tcp://" + deployment.Host + ":6969/Deployer");
                 log("Connecting to server: {0}", deployment.Host);
 
-                //IEnumerable<string> exclusionList;
-                //if (deployment.Exclusions != null)
-                //    exclusionList = Config.Exclusions.Concat(deployment.Exclusions);
-                //else
-                //    exclusionList = Config.Exclusions;
+                int uploaded = 0;
+                int same = 0;
+                int excluded = 0;
 
                 try
                 {
@@ -137,20 +136,18 @@ namespace Client
                     {
                         progressBar1.Value++;
 
-                        /*var toExclude = exclusionList.Any(
-                        el => localFileDetail.Path.Contains(el, StringComparison.InvariantCultureIgnoreCase));*/
+                        bool toExclude = config.ExclusionList.Any(
+                            el => localFileDetail.Path.Contains(el, StringComparison.InvariantCultureIgnoreCase));
 
-                        bool toExclude = false;
 
                         string relativeLocalPath =
-                            localFileDetail.Path.Remove(localFileDetail.Path.IndexOf(txtLocalDeployment.Text),
-                                txtLocalDeployment.Text.Length).TrimStart('\\');
+                            localFileDetail.Path.Remove(txtLocalDeployment.Text).TrimStart('\\');
                         if (!toExclude)
                         {
                             FileDetail remoteFile =
                                 remoteFileDetails.SingleOrDefault(
                                     rf =>
-                                        rf.Path.Remove(rf.Path.IndexOf(deployment.Path), deployment.Path.Length)
+                                        rf.Path.Remove(deployment.Path)
                                             .TrimStart('\\')
                                             .Equals(relativeLocalPath, StringComparison.InvariantCultureIgnoreCase));
 
@@ -174,19 +171,24 @@ namespace Client
 
                             if (upload)
                             {
+                                uploaded++;
                                 using (FileStream stream = File.OpenRead(localFileDetail.Path))
                                 {
                                     await
                                         dc.SendFileAsync(deployment.Path + "\\" + relativeLocalPath, stream);
                                 }
                             }
+                            else
+                            {
+                                same++;
+                            }
                         }
                         else
                         {
-                            log("{0} excluded", relativeLocalPath);
+                            excluded++;
                         }
                     }
-                    log("Finished Deployment{0}", Environment.NewLine);
+                    log("Finished Deployment: Uploaded: {0} - Unchanged: {1} - Excluded: {2}{3}", uploaded, same, excluded, Environment.NewLine);
                 }
                 catch (EndpointNotFoundException enfe)
                 {
@@ -207,6 +209,42 @@ namespace Client
             catch
             {
             }
+            refreshTreeView();
+        }
+
+        private void refreshTreeView()
+        {
+            tvExclusions.Nodes.Clear();
+            try
+            {
+                ListDirectory(tvExclusions, config.LocalDeployment);
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        private void ListDirectory(TreeView treeView, string path)
+        {
+            treeView.Nodes.Clear();
+            var rootDirectoryInfo = new DirectoryInfo(path);
+            treeView.Nodes.AddRange(CreateDirectoryNode(rootDirectoryInfo).Nodes.Cast<TreeNode>().ToArray());
+        }
+
+        private TreeNode CreateDirectoryNode(DirectoryInfo directoryInfo)
+        {
+            var directoryNode = new TreeNode(directoryInfo.Name)
+            {
+                Tag = directoryInfo.FullName.Remove(config.LocalDeployment).TrimStart('\\')
+            };
+            foreach (DirectoryInfo directory in directoryInfo.GetDirectories())
+                directoryNode.Nodes.Add(CreateDirectoryNode(directory));
+            foreach (FileInfo file in directoryInfo.GetFiles())
+                directoryNode.Nodes.Add(new TreeNode(file.Name)
+                {
+                    Tag = file.FullName.Remove(config.LocalDeployment).TrimStart('\\')
+                });
+            return directoryNode;
         }
 
         private void toolStripMenuItem1_Click(object sender, EventArgs e)
@@ -217,6 +255,66 @@ namespace Client
         private void btnDeploy_Click(object sender, EventArgs e)
         {
             deploy();
+        }
+
+        private void tvExclusions_AfterCheck(object sender, TreeViewEventArgs e)
+        {
+            if (e.Node.Nodes.Count > 0)
+            {
+                foreach (TreeNode node in e.Node.Nodes)
+                {
+                    node.Checked = e.Node.Checked;
+                }
+            }
+
+            updateExclusionList();
+        }
+
+        private void updateExclusionList()
+        {
+            config.ExclusionList = new List<string>();
+            foreach (TreeNode node in tvExclusions.Nodes)
+            {
+                updateSubExclusionList(node);
+            }
+        }
+
+        private void updateSubExclusionList(TreeNode node)
+        {
+            if (node.Checked)
+                config.ExclusionList.Add(node.Tag.ToString());
+
+            if (node.Nodes.Count > 0)
+            {
+                foreach (TreeNode innerTreeNode in node.Nodes)
+                {
+                    updateSubExclusionList(innerTreeNode);
+                }
+            }
+        }
+
+        private void loadExclusionList()
+        {
+            tvExclusions.AfterCheck -= tvExclusions_AfterCheck;
+            foreach (TreeNode treeNode in tvExclusions.Nodes)
+            {
+                loadSubExclusions(treeNode);
+            }
+            tvExclusions.AfterCheck += tvExclusions_AfterCheck;
+        }
+
+        private void loadSubExclusions(TreeNode treeNode)
+        {
+            if (config.ExclusionList.Contains(treeNode.Tag.ToString(), StringComparer.InvariantCultureIgnoreCase))
+                treeNode.Checked = true;
+
+            if (treeNode.Nodes.Count > 0)
+            {
+                foreach (TreeNode innerTreeNode in treeNode.Nodes)
+                {
+                    loadSubExclusions(innerTreeNode);
+                }
+            }
         }
     }
 }
