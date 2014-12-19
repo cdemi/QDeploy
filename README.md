@@ -7,7 +7,7 @@ QDeploy is intelligent enough to compare the destination files with the local fi
 ![Screenshot](https://cloud.githubusercontent.com/assets/8025435/5494448/c2e8cdfc-86f4-11e4-90b3-add831a536a3.PNG)
 
 ##Client
-You can clone this repository and build the Windows Client yourself, or else you may [download the pre-compiled executable](https://github.com/cdemi/QDeploy/blob/master/Client/Installer/QDeploy Client.zip?raw=true). 
+You can clone this repository and build the Windows Client yourself, or else you may [download the pre-compiled executable](https://az695309.vo.msecnd.net/qdeploy/QDeploy%20Client.application). 
 
 The client allows you to save and open deployment profiles, so if you have some common profiles that you keep using it would be easier for you if you save them for future use.
 
