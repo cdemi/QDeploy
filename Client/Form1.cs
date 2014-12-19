@@ -8,6 +8,7 @@ using System.Windows.Forms;
 using Client.Server;
 using Logic;
 using Newtonsoft.Json;
+using System.Diagnostics;
 
 namespace Client
 {
@@ -315,6 +316,11 @@ namespace Client
                     loadSubExclusions(innerTreeNode);
                 }
             }
+        }
+
+        private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            Process.Start("https://github.com/cdemi/QDeploy");
         }
     }
 }
