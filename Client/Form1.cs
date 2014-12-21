@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.ServiceModel;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using Client.Server;
 using Logic;
@@ -81,6 +82,10 @@ namespace Client
             saveFileDialog1.FileName = path;
             dataGridView1.DataSource = config.RemoteDeployments;
             loadExclusionList();
+            txtAppOfflineURL.Text = offlinePageDialog.FileName = config.AppOfflineURL;
+            chkOfflineBeforeDeployment.Checked = config.PutOfflineBeforeDeployment;
+            checkSmartOffline.Checked = config.SmartOffline;
+            checkOnlineAfterDeployment.Checked = config.PutOnlineAfterDeployment;
         }
 
         private void openFileDialog1_FileOk(object sender, CancelEventArgs e)
@@ -106,98 +111,127 @@ namespace Client
 
         private async void deploy()
         {
-            txtConsole.Text = String.Empty;
-            progressBar1.Value = 0;
-            btnDeploy.Enabled = false;
-            cleanDataGrid();
-            IEnumerable<FileDetail> localFileDetails =
-                Directory.GetFiles(txtLocalDeployment.Text, "*", SearchOption.AllDirectories).Select(f => new FileDetail
-                {
-                    Path = f,
-                    Hash = f.MD5Hash(),
-                });
-            progressBar1.Maximum = localFileDetails.Count()*config.RemoteDeployments.Count;
-
-            foreach (RemoteDeployment deployment in config.RemoteDeployments)
+            if (chkOfflineBeforeDeployment.Checked && !File.Exists(txtAppOfflineURL.Text))
             {
-                log("Deploying to {0}", deployment.FriendlyName);
-
-                var dc = new DeployerClient("NetTcpBinding_IDeployer",
-                    "net.tcp://" + deployment.Host + ":6969/Deployer");
-                log("Connecting to server: {0}", deployment.Host);
-
-                int uploaded = 0;
-                int same = 0;
-                int excluded = 0;
-
-                try
-                {
-                    FileDetail[] remoteFileDetails = await dc.GetAllFilesAsync(deployment.Path);
-                    foreach (FileDetail localFileDetail in localFileDetails)
-                    {
-                        progressBar1.Value++;
-
-                        bool toExclude = config.ExclusionList.Any(
-                            el => localFileDetail.Path.Contains(el, StringComparison.InvariantCultureIgnoreCase));
-
-
-                        string relativeLocalPath =
-                            localFileDetail.Path.Remove(txtLocalDeployment.Text).TrimStart('\\');
-                        if (!toExclude)
-                        {
-                            FileDetail remoteFile =
-                                remoteFileDetails.SingleOrDefault(
-                                    rf =>
-                                        rf.Path.Remove(deployment.Path)
-                                            .TrimStart('\\')
-                                            .Equals(relativeLocalPath, StringComparison.InvariantCultureIgnoreCase));
-
-                            bool upload = false;
-
-                            if (remoteFile != null)
-                            {
-                                bool isDifferent = !localFileDetail.Hash.IsEqualTo(remoteFile.Hash);
-
-                                if (isDifferent)
-                                {
-                                    log("{0} is different. Uploading...", relativeLocalPath);
-                                    upload = true;
-                                }
-                            }
-                            else
-                            {
-                                log("{0} does not exist at the destination server. Uploading...", relativeLocalPath);
-                                upload = true;
-                            }
-
-                            if (upload)
-                            {
-                                uploaded++;
-                                using (FileStream stream = File.OpenRead(localFileDetail.Path))
-                                {
-                                    await
-                                        dc.SendFileAsync(deployment.Path + "\\" + relativeLocalPath, stream);
-                                }
-                            }
-                            else
-                            {
-                                same++;
-                            }
-                        }
-                        else
-                        {
-                            excluded++;
-                        }
-                    }
-                    log("Finished Deployment: Uploaded: {0} - Unchanged: {1} - Excluded: {2}{3}", uploaded, same, excluded, Environment.NewLine);
-                }
-                catch (EndpointNotFoundException enfe)
-                {
-                    log("Couldn't connect to: {0}... Skipping Deployment{1}", deployment.Host, Environment.NewLine);
-                }
+                MessageBox.Show("Invalid App Offline Page", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+            else
+            {
 
-            btnDeploy.Enabled = true;
+
+
+
+                txtConsole.Text = String.Empty;
+                progressBar1.Value = 0;
+                btnDeploy.Enabled = false;
+                cleanDataGrid();
+                IEnumerable<FileDetail> localFileDetails =
+                    Directory.GetFiles(txtLocalDeployment.Text, "*", SearchOption.AllDirectories)
+                        .Select(f => new FileDetail
+                        {
+                            Path = f,
+                            Hash = f.MD5Hash(),
+                        });
+                progressBar1.Maximum = localFileDetails.Count()*config.RemoteDeployments.Count;
+
+                foreach (RemoteDeployment deployment in config.RemoteDeployments)
+                {
+                    log("Deploying to {0}", deployment.FriendlyName);
+
+                    var dc = new DeployerClient("NetTcpBinding_IDeployer",
+                        "net.tcp://" + deployment.Host + ":6969/Deployer");
+
+                    int uploaded = 0;
+                    int same = 0;
+                    int excluded = 0;
+
+                    bool isApplicationOffline = false;
+                    if (chkOfflineBeforeDeployment.Checked && !checkSmartOffline.Checked)
+                    {
+                        await putApplicationOffline(dc, deployment);
+                        isApplicationOffline = true;
+                    }
+                    try
+                    {
+                        FileDetail[] remoteFileDetails = await dc.GetAllFilesAsync(deployment.Path);
+                        foreach (FileDetail localFileDetail in localFileDetails)
+                        {
+                            progressBar1.Value++;
+
+                            bool toExclude = config.ExclusionList.Any(
+                                el => localFileDetail.Path.Contains(el, StringComparison.InvariantCultureIgnoreCase));
+
+
+                            string relativeLocalPath =
+                                localFileDetail.Path.Remove(txtLocalDeployment.Text).TrimStart('\\');
+                            if (!toExclude)
+                            {
+                                FileDetail remoteFile =
+                                    remoteFileDetails.SingleOrDefault(
+                                        rf =>
+                                            rf.Path.Remove(deployment.Path)
+                                                .TrimStart('\\')
+                                                .Equals(relativeLocalPath, StringComparison.InvariantCultureIgnoreCase));
+
+                                bool upload = false;
+
+                                if (remoteFile != null)
+                                {
+                                    bool isDifferent = !localFileDetail.Hash.IsEqualTo(remoteFile.Hash);
+
+                                    if (isDifferent)
+                                        upload = true;
+                                }
+                                else
+                                    upload = true;
+
+                                if (upload)
+                                {
+                                    if (chkOfflineBeforeDeployment.Checked && checkSmartOffline.Checked &&
+                                        !isApplicationOffline &&
+                                        new FileInfo(localFileDetail.Path).Extension.Contains("dll",
+                                            StringComparison.InvariantCultureIgnoreCase))
+                                    {
+                                        isApplicationOffline = true;
+                                        await putApplicationOffline(dc, deployment);
+                                    }
+
+                                    log("{0} is different. Uploading...", relativeLocalPath);
+                                    uploaded++;
+                                    using (FileStream stream = File.OpenRead(localFileDetail.Path))
+                                    {
+                                        await
+                                            dc.SendFileAsync(deployment.Path + "\\" + relativeLocalPath, stream);
+                                    }
+                                }
+                                else
+                                {
+                                    same++;
+                                }
+                            }
+                            else
+                            {
+                                excluded++;
+                            }
+                        }
+                        if (checkOnlineAfterDeployment.Checked && isApplicationOffline)
+                            await putApplicationOnline(dc, deployment);
+
+                        log("Finished Deployment on {0}: Uploaded: {1} - Unchanged: {2} - Excluded: {3}{4}", deployment.FriendlyName, uploaded, same,
+                            excluded, Environment.NewLine);
+                    }
+                    catch (EndpointNotFoundException enfe)
+                    {
+                        log("Couldn't connect to: {0}... Skipping Deployment{1}", deployment.Host, Environment.NewLine);
+                    }
+                    catch (Exception e)
+                    {
+                        log("Error: {0}... Skipping Deployment on {1}{2}", e.Message, deployment.FriendlyName, Environment.NewLine);
+                    }
+                }
+
+                btnDeploy.Enabled = true;
+            }
         }
 
         private void txtLocalDeployment_TextChanged(object sender, EventArgs e)
@@ -321,6 +355,83 @@ namespace Client
         private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
         {
             Process.Start("https://github.com/cdemi/QDeploy");
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            offlinePageDialog.ShowDialog();
+        }
+
+        private void offlinePageDialog_FileOk(object sender, CancelEventArgs e)
+        {
+            txtAppOfflineURL.Text = offlinePageDialog.FileName;
+        }
+
+        private async void btnOffline_Click(object sender, EventArgs e)
+        {
+            if (!File.Exists(txtAppOfflineURL.Text))
+                MessageBox.Show("Invalid App Offline Page", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            else
+            {
+                cleanDataGrid();
+                foreach (RemoteDeployment deployment in config.RemoteDeployments)
+                {
+                    var dc = new DeployerClient("NetTcpBinding_IDeployer",
+                        "net.tcp://" + deployment.Host + ":6969/Deployer");
+
+                    await putApplicationOffline(dc, deployment);
+                }
+            }
+        }
+
+        private async Task putApplicationOffline(DeployerClient dc, RemoteDeployment deployment)
+        {
+            using (FileStream stream = File.OpenRead(txtAppOfflineURL.Text))
+            {
+                await
+                    dc.SendFileAsync(deployment.Path + "\\" + "App_Offline.htm", stream);
+            }
+            log("{0} Application is now Offline", deployment.FriendlyName);
+        }
+
+        private async void btnOnline_Click(object sender, EventArgs e)
+        {
+            cleanDataGrid();
+            foreach (RemoteDeployment deployment in config.RemoteDeployments)
+            {
+                var dc = new DeployerClient("NetTcpBinding_IDeployer",
+                    "net.tcp://" + deployment.Host + ":6969/Deployer");
+                
+
+                await putApplicationOnline(dc, deployment);
+            }
+        }
+
+        private async Task putApplicationOnline(DeployerClient dc, RemoteDeployment deployment)
+        {
+            await dc.DeleteFileAsync(deployment.Path + "\\" + "App_Offline.htm");
+            log("{0} Application is now Online", deployment.FriendlyName);
+        }
+
+        private void chkOfflineBeforeDeployment_CheckedChanged(object sender, EventArgs e)
+        {
+            checkSmartOffline.Enabled = chkOfflineBeforeDeployment.Checked;
+            config.PutOfflineBeforeDeployment = chkOfflineBeforeDeployment.Checked;
+        }
+
+        private void txtAppOfflineURL_TextChanged(object sender, EventArgs e)
+        {
+            config.AppOfflineURL = txtAppOfflineURL.Text;
+        }
+
+        private void checkOnlineAfterDeployment_CheckedChanged(object sender, EventArgs e)
+        {
+            config.PutOnlineAfterDeployment = checkOnlineAfterDeployment.Checked;
+        }
+
+        private void checkSmartOffline_CheckedChanged(object sender, EventArgs e)
+        {
+            config.SmartOffline = checkSmartOffline.Checked;
         }
     }
 }

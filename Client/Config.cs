@@ -20,6 +20,14 @@ namespace Client
 
         public string LocalDeployment { get; set; }
         public BindingList<RemoteDeployment> RemoteDeployments { get; set; }
-        public List<string> ExclusionList { get; set; } 
+        public List<string> ExclusionList { get; set; }
+
+        public string AppOfflineURL { get; set; }
+
+        public bool PutOfflineBeforeDeployment { get; set; }
+
+        public bool PutOnlineAfterDeployment { get; set; }
+
+        public bool SmartOffline { get; set; }
     }
 }

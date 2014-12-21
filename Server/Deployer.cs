@@ -45,5 +45,10 @@ namespace Server
                 remoteFile.Stream.CopyTo(fileStream);
             }
         }
+
+        public void DeleteFile(string path)
+        {
+            File.Delete(path);
+        }
     }
 }

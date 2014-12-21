@@ -90,6 +90,12 @@ namespace Client.Server {
         
         [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IDeployer/GetAllFiles", ReplyAction="http://tempuri.org/IDeployer/GetAllFilesResponse")]
         System.Threading.Tasks.Task<Client.Server.FileDetail[]> GetAllFilesAsync(string path);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IDeployer/DeleteFile", ReplyAction="http://tempuri.org/IDeployer/DeleteFileResponse")]
+        void DeleteFile(string path);
+        
+        [System.ServiceModel.OperationContractAttribute(Action="http://tempuri.org/IDeployer/DeleteFile", ReplyAction="http://tempuri.org/IDeployer/DeleteFileResponse")]
+        System.Threading.Tasks.Task DeleteFileAsync(string path);
     }
     
     [System.Diagnostics.DebuggerStepThroughAttribute()]
@@ -180,6 +186,14 @@ namespace Client.Server {
         
         public System.Threading.Tasks.Task<Client.Server.FileDetail[]> GetAllFilesAsync(string path) {
             return base.Channel.GetAllFilesAsync(path);
+        }
+        
+        public void DeleteFile(string path) {
+            base.Channel.DeleteFile(path);
+        }
+        
+        public System.Threading.Tasks.Task DeleteFileAsync(string path) {
+            return base.Channel.DeleteFileAsync(path);
         }
     }
 }

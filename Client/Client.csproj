@@ -27,9 +27,8 @@
     <SupportUrl>https://github.com/cdemi/QDeploy</SupportUrl>
     <ProductName>QDeploy</ProductName>
     <PublisherName>cdemi</PublisherName>
-    <CreateWebPageOnPublish>true</CreateWebPageOnPublish>
-    <WebPage>index.htm</WebPage>
-    <ApplicationRevision>6</ApplicationRevision>
+    <OpenBrowserOnPublish>false</OpenBrowserOnPublish>
+    <ApplicationRevision>7</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
     <UseApplicationTrust>false</UseApplicationTrust>
     <CreateDesktopShortcut>true</CreateDesktopShortcut>

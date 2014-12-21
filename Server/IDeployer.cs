@@ -11,5 +11,8 @@ namespace Server
 
         [OperationContract]
         IEnumerable<FileDetail> GetAllFiles(string path);
+
+        [OperationContract]
+        void DeleteFile(string path);
     }
 }

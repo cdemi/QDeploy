@@ -33,6 +33,12 @@
   <wsdl:message name="IDeployer_GetAllFiles_OutputMessage">
     <wsdl:part name="parameters" element="tns:GetAllFilesResponse" />
   </wsdl:message>
+  <wsdl:message name="IDeployer_DeleteFile_InputMessage">
+    <wsdl:part name="parameters" element="tns:DeleteFile" />
+  </wsdl:message>
+  <wsdl:message name="IDeployer_DeleteFile_OutputMessage">
+    <wsdl:part name="parameters" element="tns:DeleteFileResponse" />
+  </wsdl:message>
   <wsdl:portType name="IDeployer">
     <wsdl:operation name="SendFile">
       <wsdl:input wsaw:Action="http://tempuri.org/IDeployer/SendFile" name="RemoteFile" message="tns:RemoteFile" />
@@ -41,6 +47,10 @@
     <wsdl:operation name="GetAllFiles">
       <wsdl:input wsaw:Action="http://tempuri.org/IDeployer/GetAllFiles" message="tns:IDeployer_GetAllFiles_InputMessage" />
       <wsdl:output wsaw:Action="http://tempuri.org/IDeployer/GetAllFilesResponse" message="tns:IDeployer_GetAllFiles_OutputMessage" />
+    </wsdl:operation>
+    <wsdl:operation name="DeleteFile">
+      <wsdl:input wsaw:Action="http://tempuri.org/IDeployer/DeleteFile" message="tns:IDeployer_DeleteFile_InputMessage" />
+      <wsdl:output wsaw:Action="http://tempuri.org/IDeployer/DeleteFileResponse" message="tns:IDeployer_DeleteFile_OutputMessage" />
     </wsdl:operation>
   </wsdl:portType>
   <wsdl:binding name="NetTcpBinding_IDeployer" type="tns:IDeployer">
@@ -59,6 +69,15 @@
     </wsdl:operation>
     <wsdl:operation name="GetAllFiles">
       <soap12:operation soapAction="http://tempuri.org/IDeployer/GetAllFiles" style="document" />
+      <wsdl:input>
+        <soap12:body use="literal" />
+      </wsdl:input>
+      <wsdl:output>
+        <soap12:body use="literal" />
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="DeleteFile">
+      <soap12:operation soapAction="http://tempuri.org/IDeployer/DeleteFile" style="document" />
       <wsdl:input>
         <soap12:body use="literal" />
       </wsdl:input>
