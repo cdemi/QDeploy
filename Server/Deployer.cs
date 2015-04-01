@@ -28,7 +28,7 @@ namespace Server
     {
         public IEnumerable<FileDetail> GetAllFiles(string path)
         {
-            return Directory.GetFiles(path, "*", SearchOption.AllDirectories).Select(f => new FileDetail
+            return Directory.GetFiles(path, "*", SearchOption.AllDirectories).AsParallel().Select(f => new FileDetail
             {
                 Path = f,
                 Hash = f.MD5Hash(),

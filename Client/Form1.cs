@@ -132,7 +132,7 @@ namespace Client
                             Path = f,
                             Hash = f.MD5Hash(),
                         });
-                progressBar1.Maximum = localFileDetails.Count()*config.RemoteDeployments.Count;
+                progressBar1.Maximum = localFileDetails.Count() * config.RemoteDeployments.Count;
 
                 foreach (RemoteDeployment deployment in config.RemoteDeployments)
                 {
@@ -140,6 +140,7 @@ namespace Client
 
                     var dc = new DeployerClient("NetTcpBinding_IDeployer",
                         "net.tcp://" + deployment.Host + ":6969/Deployer");
+                    dc.InnerChannel.OperationTimeout = new TimeSpan(0, 5, 0);
 
                     int uploaded = 0;
                     int same = 0;
@@ -153,7 +154,9 @@ namespace Client
                     }
                     try
                     {
+                        progressBar1.Style = ProgressBarStyle.Marquee;
                         FileDetail[] remoteFileDetails = await dc.GetAllFilesAsync(deployment.Path);
+                        progressBar1.Style = ProgressBarStyle.Continuous;
                         foreach (FileDetail localFileDetail in localFileDetails)
                         {
                             progressBar1.Value++;
@@ -401,7 +404,7 @@ namespace Client
             {
                 var dc = new DeployerClient("NetTcpBinding_IDeployer",
                     "net.tcp://" + deployment.Host + ":6969/Deployer");
-                
+
 
                 await putApplicationOnline(dc, deployment);
             }
